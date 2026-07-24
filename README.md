@@ -1,4 +1,4 @@
-# Fifty Years of Heat
+# Temperature trends
 
 A minimal static site for exploring how daily maximum and minimum temperatures have changed across a user-selected year range. It uses Open-Meteo's geocoding and historical weather APIs and renders one Plotly.js line per year—or per centred multi-year average. Pamplona, Navarre, Spain is the default location, and users can search for any other place.
 
