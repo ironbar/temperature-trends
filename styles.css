@@ -52,7 +52,7 @@ h1 { margin: 0; font-size: clamp(3.2rem, 8vw, 6.8rem); line-height: 0.88; letter
 .panel-heading .eyebrow { margin-bottom: 5px; }
 .panel-heading h2 { margin: 0; font-size: clamp(1.55rem, 3vw, 2rem); }
 .panel-heading > p:last-child:not(.eyebrow) { max-width: 620px; margin: 7px 0 0; color: var(--muted); font-size: 0.82rem; line-height: 1.5; }
-.display-controls .averaging-control { margin-top: 0; padding-top: 0; border-top: 0; }
+.display-year-control { margin-top: 0; padding-top: 0; border-top: 0; }
 
 label { display: block; margin-bottom: 9px; font-size: 0.82rem; font-weight: 600; }
 .search-row { display: flex; gap: 10px; }

@@ -17,6 +17,12 @@ const endYearInput = document.querySelector("#end-year");
 const selectedYearsOutput = document.querySelector("#selected-years");
 const yearRangeSlider = document.querySelector("#year-range-slider");
 const latestYearLabel = document.querySelector(".latest-year-label");
+const displayStartYearInput = document.querySelector("#display-start-year");
+const displayEndYearInput = document.querySelector("#display-end-year");
+const displayedYearsOutput = document.querySelector("#displayed-years");
+const displayYearSlider = document.querySelector("#display-year-slider");
+const displayFirstYearLabel = document.querySelector(".display-first-year");
+const displayLastYearLabel = document.querySelector(".display-last-year");
 const smoothingTicks = document.querySelectorAll(".range-ticks span");
 let loadedClimate = null;
 
@@ -50,6 +56,8 @@ smoothingInput.addEventListener("input", () => {
 
 startYearInput.addEventListener("input", () => updateYearRange("start"));
 endYearInput.addEventListener("input", () => updateYearRange("end"));
+displayStartYearInput.addEventListener("input", () => updateDisplayYearRange("start", true));
+displayEndYearInput.addEventListener("input", () => updateDisplayYearRange("end", true));
 
 function setStatus(message, isError = false) {
   status.textContent = message;
@@ -59,6 +67,8 @@ function setStatus(message, isError = false) {
 function setLoading(isLoading, message = "Fetching historical temperatures…") {
   submitButton.disabled = isLoading;
   smoothingInput.disabled = isLoading || !loadedClimate || Number(smoothingInput.max) === 1;
+  displayStartYearInput.disabled = isLoading || !loadedClimate;
+  displayEndYearInput.disabled = isLoading || !loadedClimate;
   placeholders.forEach((placeholder) => {
     placeholder.querySelector("span:last-child").textContent = message;
     placeholder.hidden = !isLoading;
@@ -89,11 +99,50 @@ function updateYearRange(changedHandle) {
     }
   }
 
-  const fullSpan = latestCompleteYear - 1950;
-  const startPercent = ((firstYear - 1950) / fullSpan) * 100;
-  const endPercent = ((lastYear - 1950) / fullSpan) * 100;
   selectedYearsOutput.textContent = `${firstYear}–${lastYear}`;
-  yearRangeSlider.style.setProperty("--range-gradient", `linear-gradient(to right, #cdd2cd 0%, #cdd2cd ${startPercent}%, var(--accent) ${startPercent}%, var(--accent) ${endPercent}%, #cdd2cd ${endPercent}%, #cdd2cd 100%)`);
+  setRangeGradient(yearRangeSlider, firstYear, lastYear, 1950, latestCompleteYear);
+}
+
+function setRangeGradient(element, firstYear, lastYear, minimum, maximum) {
+  const fullSpan = maximum - minimum;
+  const startPercent = fullSpan === 0 ? 0 : ((firstYear - minimum) / fullSpan) * 100;
+  const endPercent = fullSpan === 0 ? 100 : ((lastYear - minimum) / fullSpan) * 100;
+  element.style.setProperty("--range-gradient", `linear-gradient(to right, #cdd2cd 0%, #cdd2cd ${startPercent}%, var(--accent) ${startPercent}%, var(--accent) ${endPercent}%, #cdd2cd ${endPercent}%, #cdd2cd 100%)`);
+}
+
+function resetDisplayYearRange(firstYear, lastYear) {
+  displayStartYearInput.min = firstYear;
+  displayStartYearInput.max = lastYear;
+  displayEndYearInput.min = firstYear;
+  displayEndYearInput.max = lastYear;
+  displayStartYearInput.value = firstYear;
+  displayEndYearInput.value = lastYear;
+  displayFirstYearLabel.textContent = firstYear;
+  displayLastYearLabel.textContent = lastYear;
+  updateDisplayYearRange("start", false);
+}
+
+function updateDisplayYearRange(changedHandle, shouldRender) {
+  let firstYear = Number(displayStartYearInput.value);
+  let lastYear = Number(displayEndYearInput.value);
+  if (firstYear > lastYear) {
+    if (changedHandle === "start") {
+      firstYear = lastYear;
+      displayStartYearInput.value = firstYear;
+    } else {
+      lastYear = firstYear;
+      displayEndYearInput.value = lastYear;
+    }
+  }
+
+  displayedYearsOutput.textContent = `${firstYear}–${lastYear}`;
+  setRangeGradient(displayYearSlider, firstYear, lastYear, Number(displayStartYearInput.min), Number(displayStartYearInput.max));
+
+  if (shouldRender && loadedClimate) {
+    updateSmoothingOptions(lastYear - firstYear + 1);
+    renderLoadedClimate();
+    setStatus("Plots updated locally — no new weather data downloaded.");
+  }
 }
 
 function updateSmoothingLabel() {
@@ -180,6 +229,7 @@ async function loadClimate(place) {
       lastYear,
       observationCount: weather.daily.time.length
     };
+    resetDisplayYearRange(firstYear, lastYear);
     updateSmoothingOptions(maximums.size);
     renderLoadedClimate();
     setStatus(`${loadedClimate.observationCount.toLocaleString()} daily observations loaded.`);
@@ -209,9 +259,13 @@ function updateSmoothingOptions(yearCount) {
 
 function renderLoadedClimate() {
   const { maximums, minimums, place } = loadedClimate;
+  const displayFirstYear = Number(displayStartYearInput.value);
+  const displayLastYear = Number(displayEndYearInput.value);
   const windowSize = Number(smoothingInput.value);
-  const averagedMaximums = centeredYearWindows(maximums, windowSize);
-  const averagedMinimums = centeredYearWindows(minimums, windowSize);
+  const visibleMaximums = filterYearRange(maximums, displayFirstYear, displayLastYear);
+  const visibleMinimums = filterYearRange(minimums, displayFirstYear, displayLastYear);
+  const averagedMaximums = centeredYearWindows(visibleMaximums, windowSize);
+  const averagedMinimums = centeredYearWindows(visibleMinimums, windowSize);
   const shownYears = [...averagedMaximums.keys()];
   const firstShownYear = shownYears[0];
   const lastShownYear = shownYears[shownYears.length - 1];
@@ -234,6 +288,10 @@ function renderLoadedClimate() {
   dateRanges.forEach((element) => { element.textContent = `${formatPlace(place)} · ${period}`; });
   startYearLabels.forEach((label) => { label.textContent = firstShownYear; });
   endYearLabels.forEach((label) => { label.textContent = lastShownYear; });
+}
+
+function filterYearRange(grouped, firstYear, lastYear) {
+  return new Map([...grouped.entries()].filter(([year]) => year >= firstYear && year <= lastYear));
 }
 
 function groupByYear(dates, temperatures) {

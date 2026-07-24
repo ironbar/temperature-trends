@@ -72,6 +72,19 @@
           <h2 id="display-controls-title">Change the visualisation</h2>
           <p>These settings update the loaded data instantly, without another download.</p>
         </div>
+        <div class="year-range-control display-year-control">
+          <div class="year-range-heading">
+            <span>Years shown</span>
+            <output id="displayed-years" for="display-start-year display-end-year">—</output>
+          </div>
+          <div class="year-range-limits" aria-hidden="true">
+            <span class="display-first-year">—</span><span class="display-last-year">—</span>
+          </div>
+          <div id="display-year-slider" class="year-range-slider">
+            <input id="display-start-year" type="range" step="1" aria-label="First year shown" disabled />
+            <input id="display-end-year" type="range" step="1" aria-label="Last year shown" disabled />
+          </div>
+        </div>
         <div class="averaging-control">
           <div class="averaging-heading">
             <label for="year-window">Years averaged per line</label>

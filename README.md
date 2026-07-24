@@ -26,6 +26,7 @@ The site makes API requests in each visitor's browser, so no server or secret ke
 - Daily maximum and minimum air temperature at 2 metres above the ground.
 - The maximum plot counts days at or above each temperature; the minimum plot counts days at or below it.
 - A client-side slider applies centred moving averages across 1–11 years. Choosing 1 disables averaging and never triggers another data download.
+- A second client-side interval slider filters the loaded years without making another API request.
 - ERA5-Land is used consistently across the full period.
 - The default range is the latest 50 complete calendar years; users can select any complete years from 1950 onward.
 - ERA5-Land represents an approximately 11 km grid cell rather than a specific weather station.
