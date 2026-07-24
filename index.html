@@ -47,6 +47,25 @@
         </form>
         <div id="place-choices" class="place-choices" hidden></div>
         <p id="status" class="status" role="status" aria-live="polite"></p>
+        <div class="averaging-control">
+          <div class="averaging-heading">
+            <label for="year-window">Years averaged per line</label>
+            <output id="year-window-value" for="year-window">3-year average</output>
+          </div>
+          <input
+            id="year-window"
+            type="range"
+            min="1"
+            max="11"
+            step="2"
+            value="3"
+            aria-describedby="year-window-hint"
+            disabled
+          />
+          <div id="year-window-hint" class="range-ends">
+            <span>1 · No averaging</span><span>11 years</span>
+          </div>
+        </div>
       </section>
 
       <section class="chart-card" aria-labelledby="maximum-chart-title">
@@ -90,6 +109,7 @@
         <div class="reading-notes">
           <p><strong>Maximum plot:</strong> at any temperature, the line height is the number of days that reached that temperature or higher.</p>
           <p><strong>Minimum plot:</strong> at any temperature, the line height is the number of days that fell to that temperature or lower.</p>
+          <p><strong>Averaging:</strong> each line is centred on its labelled year. A 3-year line averages the previous, labelled, and following years.</p>
         </div>
         <dl>
           <div><dt>Measure</dt><dd>Daily air temperature at 2 metres above the ground</dd></div>

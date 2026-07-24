@@ -10,10 +10,20 @@ const dateRanges = document.querySelectorAll(".date-range");
 const startYearLabels = document.querySelectorAll(".legend-start-year");
 const endYearLabels = document.querySelectorAll(".legend-end-year");
 const submitButton = form.querySelector("button");
+const smoothingInput = document.querySelector("#year-window");
+const smoothingOutput = document.querySelector("#year-window-value");
+let loadedClimate = null;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   await findLocation(input.value.trim());
+});
+
+smoothingInput.addEventListener("input", () => {
+  updateSmoothingLabel();
+  if (!loadedClimate) return;
+  renderLoadedClimate();
+  setStatus("Plots updated locally — no new weather data downloaded.");
 });
 
 function setStatus(message, isError = false) {
@@ -23,10 +33,16 @@ function setStatus(message, isError = false) {
 
 function setLoading(isLoading, message = "Fetching historical temperatures…") {
   submitButton.disabled = isLoading;
+  smoothingInput.disabled = isLoading || !loadedClimate;
   placeholders.forEach((placeholder) => {
     placeholder.querySelector("span:last-child").textContent = message;
     placeholder.hidden = !isLoading;
   });
+}
+
+function updateSmoothingLabel() {
+  const windowSize = Number(smoothingInput.value);
+  smoothingOutput.textContent = windowSize === 1 ? "No averaging" : `${windowSize}-year average`;
 }
 
 function formatPlace(place) {
@@ -79,8 +95,6 @@ async function loadClimate(place) {
 
   const lastYear = new Date().getFullYear() - 1;
   const firstYear = lastYear - YEARS_TO_SHOW + 1;
-  startYearLabels.forEach((label) => { label.textContent = firstYear; });
-  endYearLabels.forEach((label) => { label.textContent = lastYear; });
   const params = new URLSearchParams({
     latitude: place.latitude,
     longitude: place.longitude,
@@ -103,25 +117,50 @@ async function loadClimate(place) {
     const minimums = groupByYear(weather.daily?.time || [], weather.daily?.temperature_2m_min || []);
     if (!maximums.size || !minimums.size) throw new Error("No temperature data was returned for this location.");
 
-    renderChart("maximum-chart", maximums, place, lastYear, {
-      direction: "above",
-      xTitle: "Daily maximum air temperature at 2 m above ground (°C)",
-      yTitle: "Days at or above temperature"
-    });
-    renderChart("minimum-chart", minimums, place, lastYear, {
-      direction: "below",
-      xTitle: "Daily minimum air temperature at 2 m above ground (°C)",
-      yTitle: "Days at or below temperature"
-    });
-    dateRanges.forEach((element) => {
-      element.textContent = `${formatPlace(place)} · ${firstYear}–${lastYear}`;
-    });
-    setStatus(`${weather.daily.time.length.toLocaleString()} daily observations loaded.`);
+    loadedClimate = {
+      maximums,
+      minimums,
+      place,
+      firstYear,
+      lastYear,
+      observationCount: weather.daily.time.length
+    };
+    renderLoadedClimate();
+    setStatus(`${loadedClimate.observationCount.toLocaleString()} daily observations loaded.`);
     setLoading(false);
   } catch (error) {
     setLoading(false);
     setStatus(error.message, true);
   }
+}
+
+function renderLoadedClimate() {
+  const { maximums, minimums, place } = loadedClimate;
+  const windowSize = Number(smoothingInput.value);
+  const averagedMaximums = centeredYearWindows(maximums, windowSize);
+  const averagedMinimums = centeredYearWindows(minimums, windowSize);
+  const shownYears = [...averagedMaximums.keys()];
+  const firstShownYear = shownYears[0];
+  const lastShownYear = shownYears[shownYears.length - 1];
+
+  renderChart("maximum-chart", averagedMaximums, place, lastShownYear, {
+    direction: "above",
+    xTitle: "Daily maximum air temperature at 2 m above ground (°C)",
+    yTitle: windowSize === 1 ? "Days at or above temperature" : "Average days at or above temperature",
+    windowSize
+  });
+  renderChart("minimum-chart", averagedMinimums, place, lastShownYear, {
+    direction: "below",
+    xTitle: "Daily minimum air temperature at 2 m above ground (°C)",
+    yTitle: windowSize === 1 ? "Days at or below temperature" : "Average days at or below temperature",
+    windowSize
+  });
+  const period = windowSize === 1
+    ? `${firstShownYear}–${lastShownYear}`
+    : `${windowSize}-year averages · ${firstShownYear}–${lastShownYear}`;
+  dateRanges.forEach((element) => { element.textContent = `${formatPlace(place)} · ${period}`; });
+  startYearLabels.forEach((label) => { label.textContent = firstShownYear; });
+  endYearLabels.forEach((label) => { label.textContent = lastShownYear; });
 }
 
 function groupByYear(dates, temperatures) {
@@ -137,24 +176,63 @@ function groupByYear(dates, temperatures) {
   return years;
 }
 
-function cumulativeSeries(values, direction) {
-  const counts = new Map();
-  values.forEach((value) => counts.set(value, (counts.get(value) || 0) + 1));
-  const temperatures = [...counts.keys()].sort((a, b) => a - b);
-  let running = direction === "above" ? values.length : 0;
+function centeredYearWindows(grouped, windowSize) {
+  const entries = [...grouped.entries()];
+  const halfWindow = Math.floor(windowSize / 2);
+  const windows = new Map();
+  for (let index = halfWindow; index < entries.length - halfWindow; index += 1) {
+    const year = entries[index][0];
+    const selected = entries.slice(index - halfWindow, index + halfWindow + 1);
+    const isContinuous = selected[selected.length - 1][0] - selected[0][0] === windowSize - 1;
+    if (isContinuous) windows.set(year, selected.map(([, values]) => values));
+  }
+  return windows;
+}
+
+function lowerBound(values, target) {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (values[middle] < target) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+function upperBound(values, target) {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (values[middle] <= target) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+function cumulativeSeries(years, direction) {
+  const temperatures = [...new Set(years.flat())].sort((a, b) => a - b);
   const days = temperatures.map((temperature) => {
-    if (direction === "below") running += counts.get(temperature);
-    const result = running;
-    if (direction === "above") running -= counts.get(temperature);
-    return result;
+    const total = years.reduce((sum, values) => {
+      const count = direction === "above"
+        ? values.length - lowerBound(values, temperature)
+        : upperBound(values, temperature);
+      return sum + count;
+    }, 0);
+    return total / years.length;
   });
   return { temperatures, days };
 }
 
 function renderChart(elementId, grouped, place, lastYear, options) {
   const comparison = options.direction === "above" ? "≥" : "≤";
-  const traces = [...grouped.entries()].map(([year, values], index, all) => {
-    const series = cumulativeSeries(values, options.direction);
+  const traces = [...grouped.entries()].map(([year, years], index, all) => {
+    const series = cumulativeSeries(years, options.direction);
+    const halfWindow = Math.floor(options.windowSize / 2);
+    const periodLabel = options.windowSize === 1
+      ? `<b>${year}</b>`
+      : `<b>${year - halfWindow}–${year + halfWindow} average</b><br>Centred on ${year}`;
     return {
       x: series.temperatures,
       y: series.days,
@@ -163,7 +241,7 @@ function renderChart(elementId, grouped, place, lastYear, options) {
       name: String(year),
       line: { color: viridisColor(index / Math.max(all.length - 1, 1)), width: year === lastYear ? 2.3 : 1.15, shape: "hv" },
       opacity: year === lastYear ? 1 : 0.72,
-      hovertemplate: `<b>${year}</b><br>%{y} days ${comparison} %{x:.1f} °C<extra></extra>`,
+      hovertemplate: `${periodLabel}<br>%{y:.1f} days ${comparison} %{x:.1f} °C<extra></extra>`,
       showlegend: false
     };
   });
