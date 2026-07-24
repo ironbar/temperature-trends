@@ -12,11 +12,33 @@ const endYearLabels = document.querySelectorAll(".legend-end-year");
 const submitButton = form.querySelector("button");
 const smoothingInput = document.querySelector("#year-window");
 const smoothingOutput = document.querySelector("#year-window-value");
+const startYearInput = document.querySelector("#start-year");
+const endYearInput = document.querySelector("#end-year");
+const selectedYearsOutput = document.querySelector("#selected-years");
+const yearRangeSlider = document.querySelector("#year-range-slider");
+const latestYearLabel = document.querySelector(".latest-year-label");
+const smoothingTicks = document.querySelectorAll(".range-ticks span");
 let loadedClimate = null;
+
+const latestCompleteYear = new Date().getFullYear() - 1;
+startYearInput.max = latestCompleteYear;
+endYearInput.max = latestCompleteYear;
+startYearInput.value = latestCompleteYear - YEARS_TO_SHOW + 1;
+endYearInput.value = latestCompleteYear;
+latestYearLabel.textContent = latestCompleteYear;
+updateYearRange("start");
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  await findLocation(input.value.trim());
+  try {
+    selectedYearRange();
+  } catch (error) {
+    setStatus(error.message, true);
+    return;
+  }
+  const query = input.value.trim();
+  if (loadedClimate && query === formatPlace(loadedClimate.place)) await loadClimate(loadedClimate.place);
+  else await findLocation(query);
 });
 
 smoothingInput.addEventListener("input", () => {
@@ -26,6 +48,9 @@ smoothingInput.addEventListener("input", () => {
   setStatus("Plots updated locally — no new weather data downloaded.");
 });
 
+startYearInput.addEventListener("input", () => updateYearRange("start"));
+endYearInput.addEventListener("input", () => updateYearRange("end"));
+
 function setStatus(message, isError = false) {
   status.textContent = message;
   status.classList.toggle("error", isError);
@@ -33,11 +58,42 @@ function setStatus(message, isError = false) {
 
 function setLoading(isLoading, message = "Fetching historical temperatures…") {
   submitButton.disabled = isLoading;
-  smoothingInput.disabled = isLoading || !loadedClimate;
+  smoothingInput.disabled = isLoading || !loadedClimate || Number(smoothingInput.max) === 1;
   placeholders.forEach((placeholder) => {
     placeholder.querySelector("span:last-child").textContent = message;
     placeholder.hidden = !isLoading;
   });
+}
+
+function selectedYearRange() {
+  const firstYear = Number(startYearInput.value);
+  const lastYear = Number(endYearInput.value);
+  if (!Number.isInteger(firstYear) || !Number.isInteger(lastYear)) throw new Error("Enter a valid start and end year.");
+  if (firstYear < 1950 || lastYear > latestCompleteYear) {
+    throw new Error(`Choose years between 1950 and ${latestCompleteYear}.`);
+  }
+  if (firstYear > lastYear) throw new Error("The start year must not be later than the end year.");
+  return { firstYear, lastYear };
+}
+
+function updateYearRange(changedHandle) {
+  let firstYear = Number(startYearInput.value);
+  let lastYear = Number(endYearInput.value);
+  if (firstYear > lastYear) {
+    if (changedHandle === "start") {
+      firstYear = lastYear;
+      startYearInput.value = firstYear;
+    } else {
+      lastYear = firstYear;
+      endYearInput.value = lastYear;
+    }
+  }
+
+  const fullSpan = latestCompleteYear - 1950;
+  const startPercent = ((firstYear - 1950) / fullSpan) * 100;
+  const endPercent = ((lastYear - 1950) / fullSpan) * 100;
+  selectedYearsOutput.textContent = `${firstYear}–${lastYear}`;
+  yearRangeSlider.style.setProperty("--range-gradient", `linear-gradient(to right, #cdd2cd 0%, #cdd2cd ${startPercent}%, var(--accent) ${startPercent}%, var(--accent) ${endPercent}%, #cdd2cd ${endPercent}%, #cdd2cd 100%)`);
 }
 
 function updateSmoothingLabel() {
@@ -93,8 +149,7 @@ async function loadClimate(place) {
   setLoading(true);
   setStatus("");
 
-  const lastYear = new Date().getFullYear() - 1;
-  const firstYear = lastYear - YEARS_TO_SHOW + 1;
+  const { firstYear, lastYear } = selectedYearRange();
   const params = new URLSearchParams({
     latitude: place.latitude,
     longitude: place.longitude,
@@ -125,6 +180,7 @@ async function loadClimate(place) {
       lastYear,
       observationCount: weather.daily.time.length
     };
+    updateSmoothingOptions(maximums.size);
     renderLoadedClimate();
     setStatus(`${loadedClimate.observationCount.toLocaleString()} daily observations loaded.`);
     setLoading(false);
@@ -132,6 +188,23 @@ async function loadClimate(place) {
     setLoading(false);
     setStatus(error.message, true);
   }
+}
+
+function updateSmoothingOptions(yearCount) {
+  const maximumWindow = Math.min(11, yearCount % 2 === 0 ? yearCount - 1 : yearCount);
+  smoothingInput.max = Math.max(1, maximumWindow);
+  if (Number(smoothingInput.value) > maximumWindow) smoothingInput.value = Math.max(1, maximumWindow);
+  updateSmoothingLabel();
+
+  smoothingTicks.forEach((tick) => {
+    const value = Number(tick.textContent);
+    const isAvailable = value <= maximumWindow;
+    tick.hidden = !isAvailable;
+    if (isAvailable) {
+      const position = maximumWindow === 1 ? 50 : ((value - 1) / (maximumWindow - 1)) * 100;
+      tick.style.left = `${position}%`;
+    }
+  });
 }
 
 function renderLoadedClimate() {
@@ -274,4 +347,4 @@ function viridisColor(position) {
   return `rgb(${a.map((channel, index) => Math.round(channel + (b[index] - channel) * mix)).join(",")})`;
 }
 
-window.addEventListener("DOMContentLoaded", () => findLocation("Madrid, Spain", true));
+window.addEventListener("DOMContentLoaded", () => findLocation("Pamplona", true));

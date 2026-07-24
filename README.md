@@ -1,6 +1,6 @@
 # Fifty Years of Heat
 
-A minimal static site for exploring how daily maximum and minimum temperatures have changed over the latest 50 complete years. It uses Open-Meteo's geocoding and historical weather APIs and renders cumulative distributions for each year with Plotly.js.
+A minimal static site for exploring how daily maximum and minimum temperatures have changed across a user-selected year range. It uses Open-Meteo's geocoding and historical weather APIs and renders cumulative distributions for each year with Plotly.js.
 
 ## Run locally
 
@@ -27,5 +27,5 @@ The site makes API requests in each visitor's browser, so no server or secret ke
 - The maximum plot counts days at or above each temperature; the minimum plot counts days at or below it.
 - A client-side slider applies centred moving averages across 1–11 years. Choosing 1 disables averaging and never triggers another data download.
 - ERA5-Land is used consistently across the full period.
-- The latest 50 complete calendar years are shown; the current partial year is excluded.
+- The default range is the latest 50 complete calendar years; users can select any complete years from 1950 onward.
 - ERA5-Land represents an approximately 11 km grid cell rather than a specific weather station.
