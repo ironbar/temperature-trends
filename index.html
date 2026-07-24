@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Explore 50 years of daily maximum temperatures for any location."
+    />
+    <title>Fifty Years of Heat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.plot.ly/plotly-3.1.0.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <p class="eyebrow">A local climate portrait</p>
+        <h1>Fifty years of heat,<br />one day at a time.</h1>
+        <p class="intro">
+          Compare the distribution of every daily maximum temperature across the
+          latest 50 complete years. Newer years are shown in yellow; older years
+          in violet.
+        </p>
+      </header>
+
+      <section class="controls" aria-label="Location controls">
+        <form id="location-form">
+          <label for="location-input">Choose a place</label>
+          <div class="search-row">
+            <input
+              id="location-input"
+              name="location"
+              type="search"
+              value="Madrid, Spain"
+              minlength="2"
+              autocomplete="off"
+              required
+            />
+            <button type="submit">Show climate</button>
+          </div>
+        </form>
+        <div id="place-choices" class="place-choices" hidden></div>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="chart-card" aria-labelledby="chart-title">
+        <div class="chart-heading">
+          <div>
+            <p id="date-range" class="eyebrow">Loading 50 complete years…</p>
+            <h2 id="chart-title">Daily maximum temperature</h2>
+          </div>
+          <div class="legend-key" aria-label="Line color legend">
+            <span>Older</span><span class="gradient"></span><span>Newer</span>
+          </div>
+        </div>
+        <div id="chart" aria-label="Cumulative temperature distribution chart"></div>
+        <div id="chart-placeholder" class="chart-placeholder">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Fetching historical temperatures…</span>
+        </div>
+      </section>
+
+      <section class="explanation">
+        <h2>How to read it</h2>
+        <p>
+          Each line is one year. At any temperature, its height is the number of
+          days that year whose maximum was at or below that value. A shift to the
+          right means more warm days across the year.
+        </p>
+        <dl>
+          <div><dt>Measure</dt><dd>Daily maximum at 2 m</dd></div>
+          <div><dt>Source</dt><dd>ERA5-Land reanalysis</dd></div>
+          <div><dt>Resolution</dt><dd>Approx. 11 km grid</dd></div>
+        </dl>
+      </section>
+    </main>
+
+    <footer>
+      Weather data by
+      <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo.com</a>.
+      ERA5-Land data by Copernicus Climate Change Service.
+    </footer>
+  </body>
+</html>
