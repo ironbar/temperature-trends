@@ -239,7 +239,7 @@ function renderChart(elementId, grouped, place, lastYear, options) {
       type: "scatter",
       mode: "lines",
       name: String(year),
-      line: { color: viridisColor(index / Math.max(all.length - 1, 1)), width: year === lastYear ? 2.3 : 1.15, shape: "hv" },
+      line: { color: viridisColor(index / Math.max(all.length - 1, 1)), width: year === lastYear ? 2.3 : 1.15, shape: "linear" },
       opacity: year === lastYear ? 1 : 0.72,
       hovertemplate: `${periodLabel}<br>%{y:.1f} days ${comparison} %{x:.1f} °C<extra></extra>`,
       showlegend: false

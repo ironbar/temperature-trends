@@ -87,9 +87,18 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .averaging-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
 .averaging-heading label { margin: 0; }
 .averaging-heading output { color: var(--accent); font-size: 0.82rem; font-weight: 600; }
-.averaging-control input[type="range"] { width: 100%; margin: 14px 0 5px; accent-color: var(--accent); cursor: pointer; }
+.averaging-control input[type="range"] { width: 100%; margin: 14px 0 2px; accent-color: var(--accent); cursor: pointer; }
 .averaging-control input[type="range"]:disabled { cursor: wait; opacity: 0.55; }
-.range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.7rem; }
+.range-ticks { position: relative; height: 18px; margin: 0 7px; color: var(--muted); font-size: 0.7rem; }
+.range-ticks span { position: absolute; top: 0; display: grid; justify-items: center; transform: translateX(-50%); }
+.range-ticks span::before { width: 1px; height: 4px; margin-bottom: 1px; background: #aeb7b0; content: ""; }
+.range-ticks span:nth-child(1) { left: 0; }
+.range-ticks span:nth-child(2) { left: 20%; }
+.range-ticks span:nth-child(3) { left: 40%; }
+.range-ticks span:nth-child(4) { left: 60%; }
+.range-ticks span:nth-child(5) { left: 80%; }
+.range-ticks span:nth-child(6) { left: 100%; }
+.range-hint { margin: 5px 0 0; color: var(--muted); font-size: 0.7rem; }
 
 .chart-card {
   position: relative;
