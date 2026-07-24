@@ -6,7 +6,7 @@ const input = document.querySelector("#location-input");
 const choices = document.querySelector("#place-choices");
 const status = document.querySelector("#status");
 const placeholder = document.querySelector("#chart-placeholder");
-const dateRange = document.querySelector("#date-range");
+const dateRanges = document.querySelectorAll(".date-range");
 const submitButton = form.querySelector("button");
 
 form.addEventListener("submit", async (event) => {
@@ -80,7 +80,7 @@ async function loadClimate(place) {
     longitude: place.longitude,
     start_date: `${firstYear}-01-01`,
     end_date: `${lastYear}-12-31`,
-    daily: "temperature_2m_max",
+    daily: "temperature_2m_max,temperature_2m_min",
     temperature_unit: "celsius",
     timezone: "auto",
     models: "era5_land"
@@ -93,11 +93,23 @@ async function loadClimate(place) {
       throw new Error(body.reason || `Weather request failed (${response.status})`);
     }
     const weather = await response.json();
-    const grouped = groupByYear(weather.daily?.time || [], weather.daily?.temperature_2m_max || []);
-    if (!grouped.size) throw new Error("No temperature data was returned for this location.");
+    const maximums = groupByYear(weather.daily?.time || [], weather.daily?.temperature_2m_max || []);
+    const minimums = groupByYear(weather.daily?.time || [], weather.daily?.temperature_2m_min || []);
+    if (!maximums.size || !minimums.size) throw new Error("No temperature data was returned for this location.");
 
-    renderChart(grouped, place, firstYear, lastYear);
-    dateRange.textContent = `${formatPlace(place)} · ${firstYear}–${lastYear}`;
+    renderChart("maximum-chart", maximums, place, lastYear, {
+      direction: "above",
+      xTitle: "Daily maximum air temperature at 2 m above ground (°C)",
+      yTitle: "Days at or above temperature"
+    });
+    renderChart("minimum-chart", minimums, place, lastYear, {
+      direction: "below",
+      xTitle: "Daily minimum air temperature at 2 m above ground (°C)",
+      yTitle: "Days at or below temperature"
+    });
+    dateRanges.forEach((element) => {
+      element.textContent = `${formatPlace(place)} · ${firstYear}–${lastYear}`;
+    });
     setStatus(`${weather.daily.time.length.toLocaleString()} daily observations loaded.`);
     setLoading(false);
   } catch (error) {
@@ -119,18 +131,36 @@ function groupByYear(dates, temperatures) {
   return years;
 }
 
-function renderChart(grouped, place, firstYear, lastYear) {
-  const traces = [...grouped.entries()].map(([year, values], index, all) => ({
-    x: values,
-    y: values.map((_, dayIndex) => dayIndex + 1),
-    type: "scatter",
-    mode: "lines",
-    name: String(year),
-    line: { color: viridisColor(index / Math.max(all.length - 1, 1)), width: year === lastYear ? 2.3 : 1.15, shape: "hv" },
-    opacity: year === lastYear ? 1 : 0.72,
-    hovertemplate: `<b>${year}</b><br>%{y} days ≤ %{x:.1f} °C<extra></extra>`,
-    showlegend: false
-  }));
+function cumulativeSeries(values, direction) {
+  const counts = new Map();
+  values.forEach((value) => counts.set(value, (counts.get(value) || 0) + 1));
+  const temperatures = [...counts.keys()].sort((a, b) => a - b);
+  let running = direction === "above" ? values.length : 0;
+  const days = temperatures.map((temperature) => {
+    if (direction === "below") running += counts.get(temperature);
+    const result = running;
+    if (direction === "above") running -= counts.get(temperature);
+    return result;
+  });
+  return { temperatures, days };
+}
+
+function renderChart(elementId, grouped, place, lastYear, options) {
+  const comparison = options.direction === "above" ? "≥" : "≤";
+  const traces = [...grouped.entries()].map(([year, values], index, all) => {
+    const series = cumulativeSeries(values, options.direction);
+    return {
+      x: series.temperatures,
+      y: series.days,
+      type: "scatter",
+      mode: "lines",
+      name: String(year),
+      line: { color: viridisColor(index / Math.max(all.length - 1, 1)), width: year === lastYear ? 2.3 : 1.15, shape: "hv" },
+      opacity: year === lastYear ? 1 : 0.72,
+      hovertemplate: `<b>${year}</b><br>%{y} days ${comparison} %{x:.1f} °C<extra></extra>`,
+      showlegend: false
+    };
+  });
 
   const layout = {
     margin: { l: 62, r: 22, t: 28, b: 60 },
@@ -138,8 +168,8 @@ function renderChart(grouped, place, firstYear, lastYear) {
     plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "DM Sans, sans-serif", color: "#607068", size: 12 },
     hovermode: "closest",
-    xaxis: { title: "Daily maximum temperature (°C)", gridcolor: "#e4e3dc", zeroline: false, fixedrange: false },
-    yaxis: { title: "Cumulative number of days", range: [0, 372], gridcolor: "#e4e3dc", zeroline: false, fixedrange: false },
+    xaxis: { title: options.xTitle, gridcolor: "#e4e3dc", zeroline: false, fixedrange: false },
+    yaxis: { title: options.yTitle, range: [0, 372], gridcolor: "#e4e3dc", zeroline: false, fixedrange: false },
     annotations: [{
       xref: "paper", yref: "paper", x: 1, y: 0.015, xanchor: "right", yanchor: "bottom",
       text: `${place.latitude.toFixed(2)}°, ${place.longitude.toFixed(2)}°`, showarrow: false,
@@ -147,7 +177,7 @@ function renderChart(grouped, place, firstYear, lastYear) {
     }]
   };
 
-  Plotly.react("chart", traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["lasso2d", "select2d"] });
+  Plotly.react(elementId, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["lasso2d", "select2d"] });
 }
 
 function viridisColor(position) {

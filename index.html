@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Explore 50 years of daily maximum temperatures for any location."
+      content="Explore 50 years of daily maximum and minimum temperatures for any location."
     />
     <title>Fifty Years of Heat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,9 +24,8 @@
         <p class="eyebrow">A local climate portrait</p>
         <h1>Fifty years of heat,<br />one day at a time.</h1>
         <p class="intro">
-          Compare the distribution of every daily maximum temperature across the
-          latest 50 complete years. Newer years are shown in yellow; older years
-          in violet.
+          Compare hot days and cold nights across the latest 50 complete years.
+          Newer years are shown in yellow; older years in violet.
         </p>
       </header>
 
@@ -50,32 +49,46 @@
         <p id="status" class="status" role="status" aria-live="polite"></p>
       </section>
 
-      <section class="chart-card" aria-labelledby="chart-title">
+      <section class="chart-card" aria-labelledby="maximum-chart-title">
         <div class="chart-heading">
           <div>
-            <p id="date-range" class="eyebrow">Loading 50 complete years…</p>
-            <h2 id="chart-title">Daily maximum temperature</h2>
+            <p class="eyebrow date-range">Loading 50 complete years…</p>
+            <h2 id="maximum-chart-title">Days at or above each maximum</h2>
+            <p class="chart-description">How many days reached at least a given temperature?</p>
           </div>
           <div class="legend-key" aria-label="Line color legend">
             <span>Older</span><span class="gradient"></span><span>Newer</span>
           </div>
         </div>
-        <div id="chart" aria-label="Cumulative temperature distribution chart"></div>
+        <div id="maximum-chart" class="chart" aria-label="Days at or above each daily maximum temperature"></div>
         <div id="chart-placeholder" class="chart-placeholder">
           <span class="spinner" aria-hidden="true"></span>
           <span>Fetching historical temperatures…</span>
         </div>
       </section>
 
+      <section class="chart-card" aria-labelledby="minimum-chart-title">
+        <div class="chart-heading">
+          <div>
+            <p class="eyebrow date-range">Loading 50 complete years…</p>
+            <h2 id="minimum-chart-title">Days at or below each minimum</h2>
+            <p class="chart-description">How many days fell to a given temperature or colder?</p>
+          </div>
+          <div class="legend-key" aria-label="Line color legend">
+            <span>Older</span><span class="gradient"></span><span>Newer</span>
+          </div>
+        </div>
+        <div id="minimum-chart" class="chart" aria-label="Days at or below each daily minimum temperature"></div>
+      </section>
+
       <section class="explanation">
         <h2>How to read it</h2>
-        <p>
-          Each line is one year. At any temperature, its height is the number of
-          days that year whose maximum was at or below that value. A shift to the
-          right means more warm days across the year.
-        </p>
+        <div class="reading-notes">
+          <p><strong>Maximum plot:</strong> at any temperature, the line height is the number of days that reached that temperature or higher.</p>
+          <p><strong>Minimum plot:</strong> at any temperature, the line height is the number of days that fell to that temperature or lower.</p>
+        </div>
         <dl>
-          <div><dt>Measure</dt><dd>Daily maximum at 2 m</dd></div>
+          <div><dt>Measure</dt><dd>Daily air temperature at 2 metres above the ground</dd></div>
           <div><dt>Source</dt><dd>ERA5-Land reanalysis</dd></div>
           <div><dt>Resolution</dt><dd>Approx. 11 km grid</dd></div>
         </dl>
