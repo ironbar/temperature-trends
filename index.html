@@ -29,7 +29,11 @@
         </p>
       </header>
 
-      <section class="controls" aria-label="Location controls">
+      <section class="controls" aria-labelledby="data-controls-title">
+        <div class="panel-heading">
+          <p class="eyebrow">1 · Data</p>
+          <h2 id="data-controls-title">Get temperature data</h2>
+        </div>
         <form id="location-form">
           <label for="location-input">Choose a place</label>
           <div class="search-row">
@@ -49,17 +53,25 @@
               <span>Data years</span>
               <output id="selected-years" for="start-year end-year">—</output>
             </div>
+            <div class="year-range-limits" aria-hidden="true">
+              <span>1950</span><span class="latest-year-label">—</span>
+            </div>
             <div id="year-range-slider" class="year-range-slider">
               <input id="start-year" name="start-year" type="range" min="1950" step="1" aria-label="From year" />
               <input id="end-year" name="end-year" type="range" min="1950" step="1" aria-label="To year" />
-            </div>
-            <div class="year-range-limits" aria-hidden="true">
-              <span>1950</span><span class="latest-year-label">—</span>
             </div>
           </div>
         </form>
         <div id="place-choices" class="place-choices" hidden></div>
         <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="controls display-controls" aria-labelledby="display-controls-title">
+        <div class="panel-heading">
+          <p class="eyebrow">2 · Display</p>
+          <h2 id="display-controls-title">Change the visualisation</h2>
+          <p>These settings update the loaded data instantly, without another download.</p>
+        </div>
         <div class="averaging-control">
           <div class="averaging-heading">
             <label for="year-window">Years averaged per line</label>
