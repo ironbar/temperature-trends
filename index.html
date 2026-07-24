@@ -56,12 +56,12 @@
             <h2 id="maximum-chart-title">Days at or above each maximum</h2>
             <p class="chart-description">How many days reached at least a given temperature?</p>
           </div>
-          <div class="legend-key" aria-label="Line color legend">
-            <span>Older</span><span class="gradient"></span><span>Newer</span>
+          <div class="legend-key" aria-label="Year color legend">
+            <span class="legend-start-year">—</span><span class="gradient"></span><span class="legend-end-year">—</span>
           </div>
         </div>
         <div id="maximum-chart" class="chart" aria-label="Days at or above each daily maximum temperature"></div>
-        <div id="chart-placeholder" class="chart-placeholder">
+        <div class="chart-placeholder">
           <span class="spinner" aria-hidden="true"></span>
           <span>Fetching historical temperatures…</span>
         </div>
@@ -74,11 +74,15 @@
             <h2 id="minimum-chart-title">Days at or below each minimum</h2>
             <p class="chart-description">How many days fell to a given temperature or colder?</p>
           </div>
-          <div class="legend-key" aria-label="Line color legend">
-            <span>Older</span><span class="gradient"></span><span>Newer</span>
+          <div class="legend-key" aria-label="Year color legend">
+            <span class="legend-start-year">—</span><span class="gradient"></span><span class="legend-end-year">—</span>
           </div>
         </div>
         <div id="minimum-chart" class="chart" aria-label="Days at or below each daily minimum temperature"></div>
+        <div class="chart-placeholder">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Fetching historical temperatures…</span>
+        </div>
       </section>
 
       <section class="explanation">

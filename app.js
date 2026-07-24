@@ -5,8 +5,10 @@ const form = document.querySelector("#location-form");
 const input = document.querySelector("#location-input");
 const choices = document.querySelector("#place-choices");
 const status = document.querySelector("#status");
-const placeholder = document.querySelector("#chart-placeholder");
+const placeholders = document.querySelectorAll(".chart-placeholder");
 const dateRanges = document.querySelectorAll(".date-range");
+const startYearLabels = document.querySelectorAll(".legend-start-year");
+const endYearLabels = document.querySelectorAll(".legend-end-year");
 const submitButton = form.querySelector("button");
 
 form.addEventListener("submit", async (event) => {
@@ -21,8 +23,10 @@ function setStatus(message, isError = false) {
 
 function setLoading(isLoading, message = "Fetching historical temperatures…") {
   submitButton.disabled = isLoading;
-  placeholder.querySelector("span:last-child").textContent = message;
-  placeholder.hidden = !isLoading;
+  placeholders.forEach((placeholder) => {
+    placeholder.querySelector("span:last-child").textContent = message;
+    placeholder.hidden = !isLoading;
+  });
 }
 
 function formatPlace(place) {
@@ -75,6 +79,8 @@ async function loadClimate(place) {
 
   const lastYear = new Date().getFullYear() - 1;
   const firstYear = lastYear - YEARS_TO_SHOW + 1;
+  startYearLabels.forEach((label) => { label.textContent = firstYear; });
+  endYearLabels.forEach((label) => { label.textContent = lastYear; });
   const params = new URLSearchParams({
     latitude: place.latitude,
     longitude: place.longitude,
