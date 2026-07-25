@@ -131,6 +131,46 @@
         </div>
       </section>
 
+      <section class="chart-card trend-card" aria-labelledby="trend-chart-title">
+        <div class="chart-heading trend-heading">
+          <div>
+            <p class="eyebrow date-range">Loading 50 complete years…</p>
+            <h2 id="trend-chart-title">Hot-day trends by year</h2>
+            <p class="chart-description">Days reaching each chosen maximum, with a linear trend and R². Uses the years and averaging selected above.</p>
+          </div>
+        </div>
+        <div class="trend-grid">
+          <article class="trend-panel">
+            <label for="trend-temperature-1">Temperature threshold</label>
+            <div class="temperature-input">
+              <input id="trend-temperature-1" class="trend-temperature" type="number" value="20" step="1" min="-60" max="60" disabled />
+              <span>°C</span>
+            </div>
+            <div id="trend-chart-1" class="trend-chart" aria-label="Annual days at or above the first temperature threshold"></div>
+          </article>
+          <article class="trend-panel">
+            <label for="trend-temperature-2">Temperature threshold</label>
+            <div class="temperature-input">
+              <input id="trend-temperature-2" class="trend-temperature" type="number" value="25" step="1" min="-60" max="60" disabled />
+              <span>°C</span>
+            </div>
+            <div id="trend-chart-2" class="trend-chart" aria-label="Annual days at or above the second temperature threshold"></div>
+          </article>
+          <article class="trend-panel">
+            <label for="trend-temperature-3">Temperature threshold</label>
+            <div class="temperature-input">
+              <input id="trend-temperature-3" class="trend-temperature" type="number" value="30" step="1" min="-60" max="60" disabled />
+              <span>°C</span>
+            </div>
+            <div id="trend-chart-3" class="trend-chart" aria-label="Annual days at or above the third temperature threshold"></div>
+          </article>
+        </div>
+        <div class="chart-placeholder">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Fetching historical temperatures…</span>
+        </div>
+      </section>
+
       <section class="chart-card" aria-labelledby="minimum-chart-title">
         <div class="chart-heading">
           <div>

@@ -2,6 +2,8 @@
 
 A minimal static site for exploring how daily maximum and minimum temperatures have changed across a user-selected year range. It uses Open-Meteo's geocoding and historical weather APIs and renders one Plotly.js line per year—or per centred multi-year average. Pamplona, Navarre, Spain is the default location, and users can search for any other place.
 
+Three companion scatter plots show annual counts of days at or above customizable temperature thresholds (20, 25, and 30 °C by default), together with linear trend lines and R² values.
+
 **Live site:** [ironbar.github.io/temperature-trends](https://ironbar.github.io/temperature-trends/)
 
 The interface separates two kinds of controls:
@@ -36,6 +38,7 @@ The site makes API requests in each visitor's browser, so no server or secret ke
 - A client-side slider applies centred moving averages across 1–11 years. A 3-year line averages the previous, labelled and following years, so the endpoint years are omitted. Choosing 1 disables averaging.
 - The data-range slider controls which years are downloaded from Open-Meteo.
 - The display-range slider filters those loaded years locally without making another API request.
+- The threshold trend plots follow the active display range and averaging window and update locally when a threshold changes.
 - ERA5-Land is used consistently across the full period.
 - The default range is the latest 50 complete calendar years; users can select any complete years from 1950 onward.
 - ERA5-Land represents an approximately 11 km grid cell rather than a specific weather station.

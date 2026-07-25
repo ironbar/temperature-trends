@@ -24,6 +24,7 @@ const displayYearSlider = document.querySelector("#display-year-slider");
 const displayFirstYearLabel = document.querySelector(".display-first-year");
 const displayLastYearLabel = document.querySelector(".display-last-year");
 const smoothingTicks = document.querySelectorAll(".range-ticks span");
+const trendTemperatureInputs = document.querySelectorAll(".trend-temperature");
 let loadedClimate = null;
 
 const latestCompleteYear = new Date().getFullYear() - 1;
@@ -58,6 +59,13 @@ startYearInput.addEventListener("input", () => updateYearRange("start"));
 endYearInput.addEventListener("input", () => updateYearRange("end"));
 displayStartYearInput.addEventListener("input", () => updateDisplayYearRange("start", true));
 displayEndYearInput.addEventListener("input", () => updateDisplayYearRange("end", true));
+trendTemperatureInputs.forEach((temperatureInput) => {
+  temperatureInput.addEventListener("input", () => {
+    if (!loadedClimate || !temperatureInput.validity.valid || temperatureInput.value === "") return;
+    renderTrendChartsForLoadedClimate();
+    setStatus("Trend plots updated locally — no new weather data downloaded.");
+  });
+});
 
 function setStatus(message, isError = false) {
   status.textContent = message;
@@ -69,6 +77,9 @@ function setLoading(isLoading, message = "Fetching historical temperatures…") 
   smoothingInput.disabled = isLoading || !loadedClimate || Number(smoothingInput.max) === 1;
   displayStartYearInput.disabled = isLoading || !loadedClimate;
   displayEndYearInput.disabled = isLoading || !loadedClimate;
+  trendTemperatureInputs.forEach((temperatureInput) => {
+    temperatureInput.disabled = isLoading || !loadedClimate;
+  });
   placeholders.forEach((placeholder) => {
     placeholder.querySelector("span:last-child").textContent = message;
     placeholder.hidden = !isLoading;
@@ -282,12 +293,21 @@ function renderLoadedClimate() {
     yTitle: windowSize === 1 ? "Days at or below temperature" : "Average days at or below temperature",
     windowSize
   });
+  renderTrendCharts(averagedMaximums, windowSize);
   const period = windowSize === 1
     ? `${firstShownYear}–${lastShownYear}`
     : `${windowSize}-year averages · ${firstShownYear}–${lastShownYear}`;
   dateRanges.forEach((element) => { element.textContent = `${formatPlace(place)} · ${period}`; });
   startYearLabels.forEach((label) => { label.textContent = firstShownYear; });
   endYearLabels.forEach((label) => { label.textContent = lastShownYear; });
+}
+
+function renderTrendChartsForLoadedClimate() {
+  const displayFirstYear = Number(displayStartYearInput.value);
+  const displayLastYear = Number(displayEndYearInput.value);
+  const windowSize = Number(smoothingInput.value);
+  const visibleMaximums = filterYearRange(loadedClimate.maximums, displayFirstYear, displayLastYear);
+  renderTrendCharts(centeredYearWindows(visibleMaximums, windowSize), windowSize);
 }
 
 function filterYearRange(grouped, firstYear, lastYear) {
@@ -354,6 +374,88 @@ function cumulativeSeries(years, direction) {
     return total / years.length;
   });
   return { temperatures, days };
+}
+
+function countDaysAtOrAbove(years, temperature) {
+  return years.reduce(
+    (total, values) => total + values.length - lowerBound(values, temperature),
+    0
+  ) / years.length;
+}
+
+function linearRegression(x, y) {
+  const meanX = x.reduce((sum, value) => sum + value, 0) / x.length;
+  const meanY = y.reduce((sum, value) => sum + value, 0) / y.length;
+  const xVariance = x.reduce((sum, value) => sum + (value - meanX) ** 2, 0);
+  const covariance = x.reduce((sum, value, index) => sum + (value - meanX) * (y[index] - meanY), 0);
+  const slope = xVariance === 0 ? 0 : covariance / xVariance;
+  const intercept = meanY - slope * meanX;
+  const predicted = x.map((value) => intercept + slope * value);
+  const totalVariation = y.reduce((sum, value) => sum + (value - meanY) ** 2, 0);
+  const residualVariation = y.reduce((sum, value, index) => sum + (value - predicted[index]) ** 2, 0);
+  const rSquared = totalVariation < Number.EPSILON ? null : Math.max(0, Math.min(1, 1 - residualVariation / totalVariation));
+  return { slope, intercept, predicted, rSquared };
+}
+
+function renderTrendCharts(grouped, windowSize) {
+  const entries = [...grouped.entries()];
+  if (!entries.length) return;
+  const years = entries.map(([year]) => year);
+  const firstYear = years[0];
+  const lastYear = years[years.length - 1];
+
+  trendTemperatureInputs.forEach((temperatureInput, index) => {
+    const temperature = Number(temperatureInput.value);
+    if (!Number.isFinite(temperature)) return;
+    const days = entries.map(([, yearGroups]) => countDaysAtOrAbove(yearGroups, temperature));
+    const regression = linearRegression(years, days);
+    const rSquaredLabel = regression.rSquared === null ? "R² = —" : `R² = ${regression.rSquared.toFixed(3)}`;
+    const averageLabel = windowSize === 1 ? "Days" : "Average days";
+    const traces = [
+      {
+        x: years,
+        y: days,
+        type: "scatter",
+        mode: "markers",
+        name: "Year",
+        marker: {
+          color: years.map((year) => viridisColor((year - firstYear) / Math.max(lastYear - firstYear, 1))),
+          size: 7,
+          line: { color: "rgba(255,255,255,0.8)", width: 0.7 }
+        },
+        hovertemplate: `<b>%{x}</b><br>%{y:.1f} days ≥ ${temperature} °C<extra></extra>`
+      },
+      {
+        x: [firstYear, lastYear],
+        y: [regression.predicted[0], regression.predicted[regression.predicted.length - 1]],
+        type: "scatter",
+        mode: "lines",
+        name: "Linear trend",
+        line: { color: "#285448", width: 2.5 },
+        hovertemplate: "Linear trend<br>%{y:.1f} days<extra></extra>"
+      }
+    ];
+    const layout = {
+      margin: { l: 51, r: 12, t: 53, b: 48 },
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      font: { family: "DM Sans, sans-serif", color: "#607068", size: 11 },
+      showlegend: false,
+      hovermode: "closest",
+      xaxis: { title: "Year", dtick: Math.max(1, Math.ceil((lastYear - firstYear) / 4)), gridcolor: "#e4e3dc", zeroline: false },
+      yaxis: { title: `${averageLabel} ≥ ${temperature} °C`, rangemode: "tozero", gridcolor: "#e4e3dc", zeroline: false },
+      annotations: [{
+        xref: "paper", yref: "paper", x: 0.02, y: 1.13, xanchor: "left", yanchor: "top",
+        text: `<b>${rSquaredLabel}</b>`, showarrow: false,
+        font: { size: 13, color: "#285448" }, bgcolor: "rgba(237,241,235,0.9)", borderpad: 5
+      }]
+    };
+    Plotly.react(`trend-chart-${index + 1}`, traces, layout, {
+      responsive: true,
+      displaylogo: false,
+      modeBarButtonsToRemove: ["lasso2d", "select2d"]
+    });
+  });
 }
 
 function renderChart(elementId, grouped, place, lastYear, options) {

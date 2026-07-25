@@ -148,6 +148,16 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .chart-description { margin: 7px 0 0; color: var(--muted); font-size: 0.88rem; }
 .chart { width: 100%; height: 570px; }
 
+.trend-card { min-height: 500px; }
+.trend-heading { align-items: flex-start; }
+.trend-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 26px; }
+.trend-panel { min-width: 0; padding: 16px 12px 8px; border: 1px solid var(--line); border-radius: 12px; background: #f7f7f1; }
+.trend-panel label { margin: 0 0 7px 4px; }
+.temperature-input { position: relative; width: 124px; }
+.temperature-input input:not([type="range"]) { width: 100%; min-height: 42px; padding-right: 40px; }
+.temperature-input span { position: absolute; top: 50%; right: 13px; color: var(--muted); font-size: 0.84rem; pointer-events: none; transform: translateY(-50%); }
+.trend-chart { width: 100%; height: 330px; }
+
 .legend-key { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 0.74rem; }
 .gradient { width: 110px; height: 8px; border-radius: 10px; background: linear-gradient(90deg, #440154, #3b528b, #21918c, #5ec962, #fde725); }
 
@@ -187,6 +197,9 @@ footer a { color: #e6eee8; }
   .chart-card { min-height: 610px; padding: 20px 12px; }
   .chart-heading { align-items: flex-start; flex-direction: column; padding: 0 8px; }
   .chart { height: 480px; }
+  .trend-card { min-height: 0; }
+  .trend-grid { grid-template-columns: 1fr; }
+  .trend-chart { height: 320px; }
   .chart-placeholder { inset: 140px 12px 20px; }
   .explanation { grid-template-columns: 1fr; gap: 20px; }
 }
