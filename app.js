@@ -410,6 +410,7 @@ function renderTrendCharts(grouped, windowSize) {
     const days = entries.map(([, yearGroups]) => countDaysAtOrAbove(yearGroups, temperature));
     const regression = linearRegression(years, days);
     const rSquaredLabel = regression.rSquared === null ? "R² = —" : `R² = ${regression.rSquared.toFixed(3)}`;
+    const slopeLabel = `Slope = ${regression.slope >= 0 ? "+" : ""}${regression.slope.toFixed(2)} days/year`;
     const averageLabel = windowSize === 1 ? "Days" : "Average days";
     const traces = [
       {
@@ -443,10 +444,10 @@ function renderTrendCharts(grouped, windowSize) {
       showlegend: false,
       hovermode: "closest",
       xaxis: { title: "Year", dtick: Math.max(1, Math.ceil((lastYear - firstYear) / 4)), gridcolor: "#e4e3dc", zeroline: false },
-      yaxis: { title: `${averageLabel} ≥ ${temperature} °C`, rangemode: "tozero", gridcolor: "#e4e3dc", zeroline: false },
+      yaxis: { title: `${averageLabel} ≥ ${temperature} °C`, autorange: true, gridcolor: "#e4e3dc", zeroline: false },
       annotations: [{
         xref: "paper", yref: "paper", x: 0.02, y: 1.13, xanchor: "left", yanchor: "top",
-        text: `<b>${rSquaredLabel}</b>`, showarrow: false,
+        text: `<b>${slopeLabel}</b><br>${rSquaredLabel}`, showarrow: false,
         font: { size: 13, color: "#285448" }, bgcolor: "rgba(237,241,235,0.9)", borderpad: 5
       }]
     };
